@@ -21,12 +21,12 @@
             "metadata": {
                 "description": "subnet cidr ranges"
             },
-            "defaultValue": ["192.168.0.0/24", "192.168.1.0/24", "192.168.2.0/24", "192.168.3.0/24"]
+            "defaultValue": [ "192.168.0.0/24", "192.168.1.0/24", "192.168.2.0/24", "192.168.3.0/24" ]
         }
     },
     "variables": {
         "networkName": "ntier",
-        "subnetNames": ["web1", "web2", "db1", "db2"]
+        "subnetNames": [ "web1", "web2", "db1", "db2" ]
     },
     "resources": [
         {
@@ -34,9 +34,13 @@
             "apiVersion": "2020-11-01",
             "name": "[variables('networkName')]",
             "location": "[parameters('location')]",
+            "tags": {
+                "Env": "Development",
+                "created by": "ARM"
+            },
             "properties": {
                 "addressSpace": {
-                    "addressPrefixes": ["[parameters('vnetAddressSpace')]"]
+                    "addressPrefixes": [ "[parameters('vnetAddressSpace')]" ]
                 }
             }
         },
@@ -54,7 +58,49 @@
                 "name": "subnet copy",
                 "count": 4,
                 "mode": "Serial"
-            } 
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2020-11-01",
+            "name": "webnsg",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "Env": "Development",
+                "created by": "ARM"
+            },
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "openssh",
+                        "properties": {
+                            "priority": 300,
+                            "description": "open ssh for everyone",
+                            "protocol": "Tcp",
+                            "access": "Allow",
+                            "sourceAddressPrefix": "*",
+                            "sourcePortRange": "*",
+                            "destinationAddressPrefix": "*",
+                            "destinationPortRange": "22",
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "openhttp",
+                        "properties": {
+                            "priority": 310,
+                            "description": "open http for everyone",
+                            "protocol": "Tcp",
+                            "access": "Allow",
+                            "sourceAddressPrefix": "*",
+                            "sourcePortRange": "*",
+                            "destinationAddressPrefix": "*",
+                            "destinationPortRange": "80",
+                            "direction": "Inbound"
+                        }
+                    }
+                ]
+            }
         }
     ]
-  }
+}
