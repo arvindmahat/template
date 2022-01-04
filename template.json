@@ -26,7 +26,10 @@
     },
     "variables": {
         "networkName": "ntier",
-        "subnetNames": [ "web1", "web2", "db1", "db2" ]
+        "subnetNames": [ "web1", "web2", "db1", "db2" ],
+        "publicip": "webpublicip",
+        "nsgweb": "webnsg",
+        "nicweb": "webnic"
     },
     "resources": [
         {
@@ -36,7 +39,7 @@
             "location": "[parameters('location')]",
             "tags": {
                 "Env": "Development",
-                "created by": "ARM"
+                "Created by": "ARM"
             },
             "properties": {
                 "addressSpace": {
@@ -63,11 +66,11 @@
         {
             "type": "Microsoft.Network/networkSecurityGroups",
             "apiVersion": "2020-11-01",
-            "name": "webnsg",
+            "name": "[variables('nsgweb')]",
             "location": "[resourceGroup().location]",
             "tags": {
                 "Env": "Development",
-                "created by": "ARM"
+                "Created by": "ARM"
             },
             "properties": {
                 "securityRules": [
@@ -100,6 +103,58 @@
                         }
                     }
                 ]
+            }
+        },
+        {
+            "name": "[variables('publicip')]",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2020-11-01",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "[variables('publicip')]",
+                "Env": "Development",
+                "Created by": "ARM"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Dynamic",
+                "dnsSettings": {
+                    "domainNameLabel": "qtazure"
+                }
+            }
+        },
+        {
+            "name": "[variables('nicweb')]",
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2020-11-01",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "[variables('nicweb')]",
+                "Env": "Development",
+                "Created by": "ARM"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('networkName'))]",
+                "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgweb'))]",
+                "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicip'))]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipConfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('networkName'), variables('subnetNames')[0])]"
+                            },
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicip'))]"
+                            }
+                        }
+                    }
+                ],
+                "networkSecurityGroup": {
+                    "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgweb'))]"
+                }
             }
         }
     ]
